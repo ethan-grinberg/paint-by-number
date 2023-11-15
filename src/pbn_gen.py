@@ -129,7 +129,7 @@ class PbnGen:
         
         self.setImage(self.originalImage.copy())
 
-    def showImg(self, title='', figsize=(12, 12)):
+    def showImg(self, img=None, title='', figsize=(12, 12)):
         
         """
         A utility function to show the current image
@@ -139,8 +139,15 @@ class PbnGen:
             figsize: The figure size of the image
         """
         
+        displayImage = None
+        if img is None:
+            displayImage = self.getImage()
+        else:
+            displayImage = img
+        
         plt.figure(figsize=figsize)
-        plt.imshow(self.image), plt.title(title)
+        plt.imshow(displayImage)
+        plt.title(title)
         plt.show()
 
     def get1DImg(self, image: np.ndarray) -> np.ndarray:
@@ -193,10 +200,10 @@ class PbnGen:
         H, W, C = self.image.shape
         return H*W
     
-    def resizeImage_(self, scale:float=1, dimension:tuple=None) -> None:
-        
+    def resizeImage(self, image=None, scale:float=1, dimension:tuple=None) -> None:
+    
         """
-        Resize the stored image in place by some scale factor.
+        Return a resized version of the provided image or self.image if image=None.
         
         Arguments:
             scale: A float > 0 that is used to scale the image up or down with a scale of 1 returning the same image.
@@ -205,8 +212,18 @@ class PbnGen:
         
         assert scale > 0, f'Given scale {scale} must be greater than 0!'
         
-        img = self.getImage().astype(np.uint8)
-        H, W, C = img.shape
+        img = None
+        if image is None:
+            img = self.getImage().astype(np.uint8)
+        else:
+            img = image
+            
+        H, W = 0, 0
+        
+        if img.ndim == 3:
+            H, W, C = img.shape
+        elif img.ndim == 2:
+            H, W = img.shape
 
         resized = None
         
@@ -225,6 +242,20 @@ class PbnGen:
                 resized = cv2.resize(img, (NW, NH), interpolation = cv2.INTER_AREA)
             else:
                 resized = cv2.resize(img, (NW, NH), interpolation = cv2.INTER_NEAREST)
+            
+        return resized
+    
+    def resizeImage_(self, scale:float=1, dimension:tuple=None) -> None:
+        
+        """
+        Resize the stored image in place by some scale factor.
+        
+        Arguments:
+            scale: A float > 0 that is used to scale the image up or down with a scale of 1 returning the same image.
+            dimension=None: A tuple representing the manual size the image should be in the form (H, W). Overrides any given scale value.
+        """
+        
+        resized = self.resizeImage(scale=scale, dimension=dimension)
             
         self.setImage(resized)
 
@@ -573,4 +604,40 @@ class PbnGen:
 
         print('\nDone!')
     
+
+    def getBoundaryImage(self, image:np.ndarray=None, scale:float=1) -> np.ndarray:
+        
+        """
+        Gets a boundary image between colors in a PBN template by running an edge filter on the provided image or self.image.
+        Upscaling the image before passing it to this function gives better resolution.
+
+        Arguments:
+            image: An input image to get the edges of. Uses self.image if image is None
+            scale: A value to scale the image by before applying the edge filter. Useful if you want higher resolution 
+                in the resulting boundary image for labeling regions.
+
+        Returns:
+            boundaryImage: A binary image that represents the boundaries found when applying the edge filter.
+        """
+        
+        img = None
+        if image is None:
+            img = self.getImage().astype(np.uint8)
+        else:
+            img = image.copy().astype(np.uint8)
+        
+        edgeFilter = np.array((
+            [0, 1, 0],
+            [1, -4, 1],
+            [0, 1, 0]
+        ))
+        
+        if scale != 1:
+            img = self.resizeImage(image=img, scale=scale)
+
+        boundaryImage = cv2.filter2D(img, ddepth=-1, kernel=edgeFilter)
+        boundaryImage = np.sum(boundaryImage, axis=2)
+        boundaryImage[boundaryImage > 0] = 1
+        
+        return boundaryImage
 
