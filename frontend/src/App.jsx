@@ -21,8 +21,8 @@ function App() {
 
           ))}
         </div>
-      <div>
-        {currImage}
+      <div className='canvas'>
+        <Canvas fName={currImage}></Canvas>
       </div>
     </div>
   )
