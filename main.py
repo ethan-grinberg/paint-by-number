@@ -2,11 +2,13 @@ from src.pbn_gen import PbnGen
 
 
 def main():
-    pbn = PbnGen("images/red_panda.jpg")
-    pbn.set_final_pbn()
-    palette = pbn.output_to_svg(
-        "frontend/src/assets/panda.svg", "frontend/src/assets/panda.json"
-    )
+    images = ["panda", "landscape", "flower", "portrait"]
+    dir = "frontend/src/assets/"
+    for image in images:
+        f_name = dir + image
+        pbn = PbnGen(f_name + ".jpg")
+        pbn.set_final_pbn()
+        palette = pbn.output_to_svg(f_name + ".svg", f_name + ".json")
 
 
 if __name__ == "__main__":

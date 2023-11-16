@@ -1,20 +1,26 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
-
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
-}
-
-/* .app-container {
+.app-container {
   display: flex;
-  justify-items: center;
-} */
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  margin: 0px auto;
+  width: 80%;
+  height: 90vh;
+}
+
+.image-carousel {
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.carousel-item {
+  display: inline-block;
+  margin-right: 5px;
+}
+
+.carousel-item img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
+}
