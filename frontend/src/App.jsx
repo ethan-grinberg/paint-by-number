@@ -18,9 +18,8 @@ function App() {
             <div key={index} className='carousel-item'>
               <img src={`${dir}/${item}.jpg`} className='select-image' onClick={() => selectImage(item)}/>
             </div>
-
           ))}
-        </div>
+      </div>
       <div className='canvas'>
         <Canvas fName={currImage}></Canvas>
       </div>
