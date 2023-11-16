@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from kneed import KneeLocator
 from sklearn.utils import shuffle
+import svgwrite
 
 # Change me to an integer for consistent results between runs, or set to None to allow randomness in K-means
 random_state = None
@@ -678,3 +679,67 @@ class PbnGen:
         boundaryImage[boundaryImage > 0] = 1
 
         return boundaryImage
+
+    def set_final_pbn(self):
+        """
+        Runs all necessary functions to get the final paint by number image
+        and set the internal image representation to it.
+        """
+        originalDims = self.getImage().shape[:-1]
+        self.blurImage_(blurType="bilateral", ksize=21, sigmaColor=21, sigmaSpace=14)
+        self.resizeImage_(0.5)
+        self.cluster_colors_()
+        self.pruneClustersSimple(iterations=6)
+        self.resizeImage_(dimension=originalDims)
+        # draw rectangle around image so border is recognized
+        img = self.getImage()
+        img = cv2.rectangle(img, (0, 0), (img.shape[1], img.shape[0]), (0, 0, 0), 10)
+        self.setImage(img)
+
+    def output_to_svg(self, svg_path: str):
+        """
+        Gets a boundary image between colors in a PBN template by running an edge filter on the provided image or self.image.
+        Upscaling the image before passing it to this function gives better resolution.
+
+        Arguments:
+            svg_path: File path to output the svg to.
+        Returns:
+            palette: A dictionary of all colors in the image each with an array
+            of unique html ids representing each shape. This will allow for javascript
+            manipulation of the color of each shape.
+        """
+        # h, w = self.getImage().shape[:2]
+        dwg = svgwrite.Drawing(svg_path, profile="tiny")
+        i = 0
+        palette = {}
+        color_masks = self.getUniqueColorsMasks()
+        for color, mask in color_masks.items():
+            palette[color] = []
+            mask[mask == False] = 0
+            mask[mask == True] = 1
+            boundary_img = self.getBoundaryImage(mask)
+
+            # plt.imshow(boundary_img, cmap="gray")
+            # plt.show()
+
+            contours, hierarchy = cv2.findContours(
+                boundary_img.astype(np.uint8),
+                cv2.RETR_EXTERNAL,
+                cv2.CHAIN_APPROX_TC89_L1,
+            )
+            for c in contours:
+                points = c.squeeze().tolist()
+                if len(c.squeeze().shape) == 1:
+                    points = [points]
+
+                fill = "white"
+                # fill = "rgb" + str(color)
+
+                shape = dwg.polygon(points, fill=fill, stroke="black", id=str(i))
+                dwg.add(shape)
+                palette[color].append(str(i))
+                i += 1
+
+        dwg.save()
+        print(f"{i} shapes")
+        return palette
