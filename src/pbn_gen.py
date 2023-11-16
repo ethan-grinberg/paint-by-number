@@ -6,6 +6,7 @@ from sklearn.cluster import KMeans
 from kneed import KneeLocator
 from sklearn.utils import shuffle
 import svgwrite
+import json
 
 # Change me to an integer for consistent results between runs, or set to None to allow randomness in K-means
 random_state = None
@@ -696,7 +697,7 @@ class PbnGen:
         img = cv2.rectangle(img, (0, 0), (img.shape[1], img.shape[0]), (0, 0, 0), 10)
         self.setImage(img)
 
-    def output_to_svg(self, svg_path: str):
+    def output_to_svg(self, svg_path: str, output_palette_path: str = None):
         """
         Gets a boundary image between colors in a PBN template by running an edge filter on the provided image or self.image.
         Upscaling the image before passing it to this function gives better resolution.
@@ -711,10 +712,9 @@ class PbnGen:
         # h, w = self.getImage().shape[:2]
         dwg = svgwrite.Drawing(svg_path, profile="tiny")
         i = 0
-        palette = {}
+        palette = []
         color_masks = self.getUniqueColorsMasks()
         for color, mask in color_masks.items():
-            palette[color] = []
             mask[mask == False] = 0
             mask[mask == True] = 1
             boundary_img = self.getBoundaryImage(mask)
@@ -727,6 +727,10 @@ class PbnGen:
                 cv2.RETR_EXTERNAL,
                 cv2.CHAIN_APPROX_TC89_L1,
             )
+
+            data = {}
+            data["color"] = str(color)
+            data["shapes"] = []
             for c in contours:
                 points = c.squeeze().tolist()
                 if len(c.squeeze().shape) == 1:
@@ -737,9 +741,16 @@ class PbnGen:
 
                 shape = dwg.polygon(points, fill=fill, stroke="black", id=str(i))
                 dwg.add(shape)
-                palette[color].append(str(i))
+                data["shapes"].append(str(i))
                 i += 1
+
+            palette.append(data)
 
         dwg.save()
         print(f"{i} shapes")
+
+        if output_palette_path:
+            with open(output_palette_path, "w") as outfile:
+                json.dump(palette, outfile)
+
         return palette
