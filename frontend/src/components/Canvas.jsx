@@ -83,7 +83,10 @@ export function Canvas({fName}) {
                 </button>  
                 <button onClick={() => fillColors()}>
                     Fill
-                </button>               
+                </button>
+                <button>
+                    <img src="src/assets/escape.png" width={15}/>
+                </button>             
             </div>
             <div className='svg-container'>
                 <TransformWrapper >
