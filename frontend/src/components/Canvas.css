@@ -29,3 +29,9 @@ button {
 .svg-element {
   height: 70vh;
 }
+
+.canvas-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}

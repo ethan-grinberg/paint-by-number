@@ -1,10 +1,46 @@
 import { useState, useEffect } from 'react'
 import "./Canvas.css"
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import { Grid } from  'react-loader-spinner'
+
+const LoadingOverlay = () => {
+    return (
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          flexDirection: 'column',
+          zIndex: 9999,
+        }}
+      >
+        <Grid
+            height="100"
+            width="100"
+            color="#646cff"
+            ariaLabel="grid-loading"
+            radius="12.5"
+            wrapperClass=""
+            visible={true}
+            wrapperStyle={{margin: 20}}
+        />
+        <div>
+            Processing...
+        </div>
+      </div>
+    );
+  };
 
 export function Canvas({fName}) {
     const [SvgComponent, setSvgComponent] = useState(null);
     const [idList, setIdList] = useState([]);
+    const [loading, setLoading] = useState(false);
 
     const handleItemClick = (id, color) => {
         const element = document.getElementById(id);
@@ -37,9 +73,16 @@ export function Canvas({fName}) {
     
     useEffect(() => {
         const importSvg = async () => {
+            setLoading(true)
             try {
-                const component = await import(`/src/assets/${fName}.svg?react`);
-                const jsonFile = await import(`/src/assets/${fName}.json`)
+                // eslint-disable-next-line no-unused-vars
+                const [component, jsonFile, _] =  await Promise.all(
+                    [
+                        import(`/src/assets/${fName}.svg?react`), 
+                        import(`/src/assets/${fName}.json`), 
+                        new Promise((resolve) => setTimeout(resolve, 800))
+                    ])
+                setLoading(false);
                 setIdList(jsonFile.default);
                 setSvgComponent(() => component.default);
             } catch (error) {
@@ -96,11 +139,12 @@ export function Canvas({fName}) {
                     <img src="src/assets/escape.png" width={15}/>
                 </button>             
             </div>
-            <div className='svg-container'>
+            {loading && <LoadingOverlay></LoadingOverlay>}
+            {!loading && <div className='svg-container'>
                 <TransformComponent>
                     {SvgComponent && (<SvgComponent className='svg-element'/>)}
                 </TransformComponent>
-            </div>
+            </div>}
         </div>
         )}
         </TransformWrapper>
