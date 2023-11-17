@@ -76,6 +76,14 @@ export function Canvas({fName}) {
       }, [idList]);
       
     return (
+        <TransformWrapper 
+            initialScale={1}
+            initialPositionX={0}
+            initialPositionY={0}
+        >
+        {
+        // eslint-disable-next-line no-unused-vars
+        ({ zoomIn, zoomOut, resetTransform, ...rest }) => (
         <div className='canvas-container'>
             <div className='controls'>
                 <button onClick={() => clearColors()}> 
@@ -84,19 +92,17 @@ export function Canvas({fName}) {
                 <button onClick={() => fillColors()}>
                     Fill
                 </button>
-                <button>
+                <button onClick={() => resetTransform()}>
                     <img src="src/assets/escape.png" width={15}/>
                 </button>             
             </div>
             <div className='svg-container'>
-                <TransformWrapper >
-                    <TransformComponent>
-                        {SvgComponent && (<SvgComponent className='svg-element'/>)}
-                    </TransformComponent>
-                </TransformWrapper>
-
+                <TransformComponent>
+                    {SvgComponent && (<SvgComponent className='svg-element'/>)}
+                </TransformComponent>
             </div>
         </div>
-
+        )}
+        </TransformWrapper>
     )
 }
