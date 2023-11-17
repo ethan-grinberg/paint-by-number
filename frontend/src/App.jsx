@@ -16,7 +16,7 @@ function App() {
       <div className='image-carousel'>
           {images.map((item, index) => (
             <div key={index} className='carousel-item'>
-              <img src={`${dir}/${item}.jpg`} className='select-image' onClick={() => selectImage(item)}/>
+              <img src={`${dir}/${item}.jpg`} onClick={() => selectImage(item)} className={`carousel-img ${currImage === item ? 'selected' : ''}`}/>
             </div>
           ))}
       </div>

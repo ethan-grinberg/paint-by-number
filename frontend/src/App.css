@@ -8,22 +8,25 @@
 }
 
 .image-carousel {
+  margin-top: 20px;
   overflow-x: auto;
   white-space: nowrap;
 }
 
 .carousel-item {
   display: inline-block;
-  margin-right: 5px;
+  cursor: pointer;
 }
 
-.carousel-item img {
+.carousel-img {
+  margin: 10px;
   width: 100px;
   height: 100px;
   object-fit: cover;
   border-radius: 8px;
+
 }
 
-.canvas {
-  margin-top: 20px;
+.carousel-img.selected {
+  outline: 5px solid rgb(117, 81, 168);
 }
