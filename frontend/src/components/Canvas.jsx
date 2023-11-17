@@ -11,6 +11,28 @@ export function Canvas({fName}) {
           element.setAttribute('fill', color);
         }
     };
+
+    const fillColors = () => {
+        for (const {color, shapes} of idList) {
+            for (const id of shapes) {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.setAttribute('fill', `rgb${color}`)
+                }
+            }
+        }
+    }
+
+    const clearColors = () => {
+        for (const item of idList) {
+            for (const id of item.shapes) {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.setAttribute('fill', "white")
+                }
+            }
+        }
+    }
     
     useEffect(() => {
         const importSvg = async () => {
@@ -31,7 +53,6 @@ export function Canvas({fName}) {
       useEffect(() => {
         // Loop through the list of IDs and add event listeners
         for (const {color, shapes} of idList) {
-            console.log(color)
             for (const id of shapes) {
                 const element = document.getElementById(id);
                 if (element) {
@@ -55,6 +76,14 @@ export function Canvas({fName}) {
       
     return (
         <div>
+            <div className='controls'>
+                <button onClick={() => clearColors()}> 
+                    Clear
+                </button>  
+                <button onClick={() => fillColors()}>
+                    Fill
+                </button>               
+            </div>
             {SvgComponent && (<SvgComponent/>)}
         </div>
 
