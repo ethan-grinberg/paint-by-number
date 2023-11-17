@@ -22,3 +22,11 @@ button {
   button:focus-visible {
     outline: 4px auto -webkit-focus-ring-color;
   }
+.svg-container {
+  border: solid;
+  margin-top: 5px;
+}
+.svg-element {
+  margin-top: 5px;
+  height: 70vh;
+}

@@ -3,12 +3,14 @@
   justify-content: center;
   flex-direction: column;
   align-items: center;
-  margin: 0px auto;
+  text-align: center;
   width: 80%;
+  margin: 0px auto;
 }
 
 .image-carousel {
   margin-top: 20px;
+  width: 100%;
   overflow-x: auto;
   white-space: nowrap;
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import "./Canvas.css"
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 export function Canvas({fName}) {
     const [SvgComponent, setSvgComponent] = useState(null);
@@ -75,7 +76,7 @@ export function Canvas({fName}) {
       }, [idList]);
       
     return (
-        <div>
+        <div className='canvas-container'>
             <div className='controls'>
                 <button onClick={() => clearColors()}> 
                     Clear
@@ -84,7 +85,14 @@ export function Canvas({fName}) {
                     Fill
                 </button>               
             </div>
-            {SvgComponent && (<SvgComponent/>)}
+            <div className='svg-container'>
+                <TransformWrapper >
+                    <TransformComponent>
+                        {SvgComponent && (<SvgComponent className='svg-element'/>)}
+                    </TransformComponent>
+                </TransformWrapper>
+
+            </div>
         </div>
 
     )

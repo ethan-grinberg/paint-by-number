@@ -12,6 +12,7 @@
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-zoom-pan-pinch": "^3.3.0",
     "vite-plugin-svgr": "^4.1.0"
   },
   "devDependencies": {

@@ -710,7 +710,7 @@ class PbnGen:
             manipulation of the color of each shape.
         """
         h, w = self.getImage().shape[:2]
-        dwg = svgwrite.Drawing(svg_path, profile="tiny", size=(w, h))
+        dwg = svgwrite.Drawing(svg_path, profile="tiny", viewBox=(f"0 0 {w} {h}"))
         i = 0
         palette = []
         color_masks = self.getUniqueColorsMasks()
