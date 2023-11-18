@@ -1,41 +1,7 @@
 import { useState, useEffect } from 'react'
 import "./Canvas.css"
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
-import { Grid } from  'react-loader-spinner'
-
-const LoadingOverlay = () => {
-    return (
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          background: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          flexDirection: 'column',
-          zIndex: 9999,
-        }}
-      >
-        <Grid
-            height="100"
-            width="100"
-            color="#646cff"
-            ariaLabel="grid-loading"
-            radius="12.5"
-            wrapperClass=""
-            visible={true}
-            wrapperStyle={{margin: 20}}
-        />
-        <div>
-            Processing...
-        </div>
-      </div>
-    );
-  };
+import { LoadingOverlay } from './Loading';
 
 export function Canvas({fName}) {
     const [SvgComponent, setSvgComponent] = useState(null);
