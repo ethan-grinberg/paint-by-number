@@ -75,16 +75,21 @@ export function Canvas({fName}) {
         const importSvg = async () => {
             setLoading(true)
             try {
-                // eslint-disable-next-line no-unused-vars
-                const [component, jsonFile, _] =  await Promise.all(
-                    [
-                        import(`/src/assets/${fName}.svg?react`), 
-                        import(`/src/assets/${fName}.json`), 
-                        new Promise((resolve) => setTimeout(resolve, 800))
-                    ])
-                setLoading(false);
-                setIdList(jsonFile.default);
-                setSvgComponent(() => component.default);
+                if (fName.includes("src/assets/")) {
+                    const [baseFile] = fName.split(".");
+                    // eslint-disable-next-line no-unused-vars
+                    const [component, jsonFile, _] =  await Promise.all(
+                        [
+                            import(`/${baseFile}.svg?react`), 
+                            import(`/${baseFile}.json`), 
+                            new Promise((resolve) => setTimeout(resolve, 800))
+                        ])
+                    setLoading(false);
+                    setIdList(jsonFile.default);
+                    setSvgComponent(() => component.default);
+                } else {
+                    // load from bucket
+                }
             } catch (error) {
               console.error('Error importing SVG/JSON:', error);
             }

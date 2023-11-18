@@ -2,11 +2,14 @@ import { Canvas } from './components/Canvas'
 import { useState } from 'react'
 import './App.css'
 
-const images = ["panda", "landscape", "flower", "portrait"]
 const dir = "src/assets"
+let imageFiles = ["panda", "landscape", "flower", "portrait"];
+imageFiles = imageFiles.map(item => `${dir}/${item}.jpg`);
 
 function App() {
-  const [currImage, setCurrImage] = useState("panda");
+  const [currImage, setCurrImage] = useState(imageFiles[0]);
+  const [images, setImages] = useState(imageFiles);
+  
   function selectImage(image) {
     setCurrImage(image);
   }
@@ -16,7 +19,7 @@ function App() {
       <div className='image-carousel'>
           {images.map((item, index) => (
             <div key={index} className='carousel-item'>
-              <img src={`${dir}/${item}.jpg`} onClick={() => selectImage(item)} className={`carousel-img ${currImage === item ? 'selected' : ''}`}/>
+              <img src={item} onClick={() => selectImage(item)} className={`carousel-img ${currImage === item ? 'selected' : ''}`}/>
             </div>
           ))}
       </div>
