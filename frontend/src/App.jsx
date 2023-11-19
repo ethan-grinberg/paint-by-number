@@ -28,13 +28,19 @@ function App() {
     }
 
     setLoading(true);
-    // eslint-disable-next-line no-unused-vars
-    const [_, extension] = image.name.split(".")
-    const newName = uuid();
-    const imageRef = ref(storage, `${newName}.${extension}`);
     try {
+      // eslint-disable-next-line no-unused-vars
+      const [_, extension] = image.name.split(".")
+      const fileName = `${uuid()}.${extension}`;
+      const imageRef = ref(storage, fileName);
+
       const res = await uploadBytes(imageRef, image);
       const url = await getDownloadURL(res.ref);
+
+      // const functions = getFunctions();
+      // const callableReturnMessage = httpsCallable(functions, 'generate_pbn');
+      // const funcRes = await callableReturnMessage({"id": fileName});
+
       setImages([url, ...images]);
     } catch (err) {
       console.log(err)

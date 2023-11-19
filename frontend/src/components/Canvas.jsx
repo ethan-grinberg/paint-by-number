@@ -1,7 +1,12 @@
 import { useState, useEffect } from 'react'
 import "./Canvas.css"
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { ref, getDownloadURL } from "firebase/storage";
+import storage from '../../firebaseConfig';
 import { LoadingOverlay } from './Loading';
+
+const minLoadingTime = 800
 
 export function Canvas({fName}) {
     const [SvgComponent, setSvgComponent] = useState(null);
@@ -39,7 +44,7 @@ export function Canvas({fName}) {
     
     useEffect(() => {
         const importSvg = async () => {
-            setLoading(true)
+            setLoading(true);
             try {
                 if (fName.includes("src/assets/")) {
                     const [baseFile] = fName.split(".");
@@ -48,13 +53,35 @@ export function Canvas({fName}) {
                         [
                             import(`/${baseFile}.svg?react`), 
                             import(`/${baseFile}.json`), 
-                            new Promise((resolve) => setTimeout(resolve, 800))
+                            new Promise((resolve) => setTimeout(resolve, minLoadingTime))
                         ])
                     setLoading(false);
                     setIdList(jsonFile.default);
                     setSvgComponent(() => component.default);
                 } else {
                     // load from bucket
+                    const id = fName.substring(fName.indexOf("o/")+2, fName.lastIndexOf(".jpg"));
+
+                    const functions = getFunctions();
+                    const callableReturnMessage = httpsCallable(functions, 'generate_pbn');
+                    const funcRes = await callableReturnMessage({"id": id});
+
+                    // console.log(baseFile)
+                    // const svgRef = ref(storage, `${id}.svg`);
+                    // const jsonRef = ref(storage, `${id}.json`)
+                    // const svgUrl = await getDownloadURL(svgRef);
+                    // const jsonUrl = await getDownloadURL(jsonRef);
+                    // console.log(svgRef);
+                    // const [component, jsonFile, _] =  await Promise.all(
+                    //     [
+                    //         fetch(svgRef), 
+                    //         fetch(jsonRef)
+                    //     ])
+                    // console.log(component);
+                    // console.log(jsonFile)
+                    // setLoading(false);
+                    // setIdList(jsonFile.default);
+                    // setSvgComponent(() => component.default);
                 }
             } catch (error) {
               console.error('Error importing SVG/JSON:', error);

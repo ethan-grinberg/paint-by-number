@@ -14,19 +14,25 @@ app = initialize_app(cred, {"storageBucket": "paint-by-number-21987.appspot.com"
 bucket = storage.bucket()
 
 
-@https_fn.on_request(cors=options.CorsOptions(cors_origins="*", cors_methods=["post"]))
-def get_pbn(req: https_fn.Request) -> https_fn.Response:
-    object_id = req.args.get("id")
+@https_fn.on_call(memory=options.MemoryOption.GB_1)
+def make_pbn(req: https_fn.CallableRequest):
+    object_id = req.data["id"]
 
     if not object_id:
-        return https_fn.Response(status=400, response="Did not provide object id.")
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message=("The function must be called with an id argument"),
+        )
 
     try:
         blob = bucket.blob(object_id)
         contents = blob.download_as_string()
     except Exception as e:
         print(e)
-        return https_fn.Response(status=405, response="Failed to find image")
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.NOT_FOUND,
+            message=("resource not found"),
+        )
 
     try:
         base_id, _ = object_id.split(".")
@@ -51,6 +57,9 @@ def get_pbn(req: https_fn.Request) -> https_fn.Response:
         )
     except Exception as e:
         print(e)
-        return https_fn.Response(status=500, response="Failed to process image")
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INTERNAL,
+            message=("Failed to Execute"),
+        )
 
-    return https_fn.Response("OK")
+    return {"baseId": base_id}

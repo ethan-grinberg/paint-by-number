@@ -1,7 +1,6 @@
 import cv2
 from collections import Counter
 import numpy as np
-import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from kneed import KneeLocator
 from sklearn.utils import shuffle
@@ -117,12 +116,12 @@ class PbnGen:
 
         unique_values, counts = np.unique(self.labels, return_counts=True)
         percentages = (counts / len(self.labels)) * 100
-        plt.pie(
-            percentages,
-            colors=np.array(self.palette),
-            labels=np.arange(len(self.palette)),
-        )
-        plt.show()
+        # plt.pie(
+        #     percentages,
+        #     colors=np.array(self.palette),
+        #     labels=np.arange(len(self.palette)),
+        # )
+        # plt.show()
 
     def resetImage(self):
         """
@@ -146,10 +145,10 @@ class PbnGen:
         else:
             displayImage = img
 
-        plt.figure(figsize=figsize)
-        plt.imshow(displayImage)
-        plt.title(title)
-        plt.show()
+        # plt.figure(figsize=figsize)
+        # plt.imshow(displayImage)
+        # plt.title(title)
+        # plt.show()
 
     def get1DImg(self, image: np.ndarray) -> np.ndarray:
         """
@@ -360,9 +359,9 @@ class PbnGen:
             color = np.array(color, dtype=np.uint8)
             singleColorImage = color * mask
 
-            if showPlots:
-                plt.imshow(singleColorImage), plt.title(color)
-                plt.show()
+            # if showPlots:
+            #     plt.imshow(singleColorImage), plt.title(color)
+            #     plt.show()
 
             # The mask seems to need to be a "binary" image but the binary values are 0 and 255 instead of 0 and 1
             (
@@ -374,9 +373,9 @@ class PbnGen:
                 (mask[..., 0] * 255).astype(np.uint8), 8, cv2.CV_32S, cv2.CCL_WU
             )
 
-            if showPlots:
-                plt.imshow(labels), plt.title("Before pruning")
-                plt.show()
+            # if showPlots:
+            #     plt.imshow(labels), plt.title("Before pruning")
+            #     plt.show()
 
             labelIndices = np.arange(1, numLabels)
             areas = stats[labelIndices, -1]
@@ -393,16 +392,16 @@ class PbnGen:
             labels[labels > 0] = 0
             labels = -labels
 
-            if showPlots:
-                plt.imshow(labels), plt.title("Pruned clusters")
-                plt.show()
+            # if showPlots:
+            #     plt.imshow(labels), plt.title("Pruned clusters")
+            #     plt.show()
 
             prunableClusters[tuple(color)] = labels
 
-            if showPlots:
-                binaryLabels = (labels > 0).astype(np.uint8)
-                plt.imshow(mask[..., 0] - binaryLabels), plt.title("After pruning")
-                plt.show()
+            # if showPlots:
+            #     binaryLabels = (labels > 0).astype(np.uint8)
+            #     plt.imshow(mask[..., 0] - binaryLabels), plt.title("After pruning")
+            #     plt.show()
 
         self.prunableClusters = prunableClusters
 
@@ -495,10 +494,10 @@ class PbnGen:
 
             mergedColors = -np.ones_like(image, dtype=np.int32)
 
-            if showPlots:
-                plt.figure(figsize=(20, 20)), plt.imshow(self.image), plt.title(
-                    "Before pruning"
-                ), plt.show()
+            # if showPlots:
+            #     plt.figure(figsize=(20, 20)), plt.imshow(self.image), plt.title(
+            #         "Before pruning"
+            #     ), plt.show()
 
             colorsOrdered = sorted(
                 prunableClusters.items(),
@@ -548,27 +547,27 @@ class PbnGen:
                     consistentLabelMask[labelMask != 0]
                 ]
 
-            if showPlots:
-                plt.figure(figsize=(20, 20)), plt.imshow(mergedColors), plt.title(
-                    "mergedColors"
-                ), plt.show()
+            # if showPlots:
+            #     plt.figure(figsize=(20, 20)), plt.imshow(mergedColors), plt.title(
+            #         "mergedColors"
+            #     ), plt.show()
 
-                mergedColorsMask = (mergedColors == -1).astype(np.uint8)
-                plt.figure(figsize=(20, 20)), plt.imshow(
-                    mergedColorsMask * 255
-                ), plt.title("mergedColorsMask"), plt.show()
+            #     mergedColorsMask = (mergedColors == -1).astype(np.uint8)
+            #     plt.figure(figsize=(20, 20)), plt.imshow(
+            #         mergedColorsMask * 255
+            #     ), plt.title("mergedColorsMask"), plt.show()
 
-                plt.figure(figsize=(20, 20)), plt.imshow(self.image), plt.title(
-                    "Before pruning"
-                ), plt.show()
-                # plt.figure(figsize=(20, 20)), plt.imshow(prunedImage), plt.title('After pruning'), plt.show()
-                plt.figure(figsize=(20, 20)), plt.imshow(image), plt.title(
-                    "After pruning"
-                ), plt.show()
+            #     plt.figure(figsize=(20, 20)), plt.imshow(self.image), plt.title(
+            #         "Before pruning"
+            #     ), plt.show()
+            #     # plt.figure(figsize=(20, 20)), plt.imshow(prunedImage), plt.title('After pruning'), plt.show()
+            #     plt.figure(figsize=(20, 20)), plt.imshow(image), plt.title(
+            #         "After pruning"
+            #     ), plt.show()
 
-                plt.figure(figsize=(20, 20)), plt.imshow(
-                    np.abs(self.image - image)
-                ), plt.title("Diff"), plt.show()
+            #     plt.figure(figsize=(20, 20)), plt.imshow(
+            #         np.abs(self.image - image)
+            #     ), plt.title("Diff"), plt.show()
 
             self.setImage(image.copy())
 
@@ -594,10 +593,10 @@ class PbnGen:
 
             prunableClusters = self.prunableClusters
 
-            if showPlots:
-                plt.figure(figsize=(20, 20)), plt.imshow(self.image), plt.title(
-                    "Before pruning"
-                ), plt.show()
+            # if showPlots:
+            #     plt.figure(figsize=(20, 20)), plt.imshow(self.image), plt.title(
+            #         "Before pruning"
+            #     ), plt.show()
 
             # print('Starting pruning loop')
             for color, labelMask in prunableClusters.items():
@@ -632,17 +631,17 @@ class PbnGen:
                     consistentLabelMask[labelMask != 0]
                 ]
 
-            if showPlots:
-                plt.figure(figsize=(20, 20)), plt.imshow(self.image), plt.title(
-                    "Before pruning"
-                ), plt.show()
-                plt.figure(figsize=(20, 20)), plt.imshow(image), plt.title(
-                    "After pruning"
-                ), plt.show()
+            # if showPlots:
+            #     plt.figure(figsize=(20, 20)), plt.imshow(self.image), plt.title(
+            #         "Before pruning"
+            #     ), plt.show()
+            #     plt.figure(figsize=(20, 20)), plt.imshow(image), plt.title(
+            #         "After pruning"
+            #     ), plt.show()
 
-                plt.figure(figsize=(20, 20)), plt.imshow(
-                    np.abs(self.image - image)
-                ), plt.title("Diff"), plt.show()
+            #     plt.figure(figsize=(20, 20)), plt.imshow(
+            #         np.abs(self.image - image)
+            #     ), plt.title("Diff"), plt.show()
 
             self.setImage(image)
 
