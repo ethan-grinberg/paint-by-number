@@ -63,16 +63,28 @@ export function Canvas({fName}) {
                 } else {
                     // load from bucket
                     const id = fName.substring(fName.indexOf("o/")+2, fName.lastIndexOf(".jpg"));
-                    
-                    // call cloud function to convert image to pbn 
-                    const functions = getFunctions();
-                    const callableReturnMessage = httpsCallable(functions, 'make_pbn');
-                    const funcRes = await callableReturnMessage({"id": `${id}.jpg`});
-
-                    // retrieve results from bucket
                     const svgRef = ref(storage, `${id}.svg`);
-                    const jsonRef = ref(storage, `${id}.json`)
-                    const [svgUrl, jsonUrl] = await Promise.all([getDownloadURL(svgRef), getDownloadURL(jsonRef)])
+                    const jsonRef = ref(storage, `${id}.json`);
+                    
+                    // call cloud function to convert image to pbn if not already computed
+                    let svgUrl;
+                    let jsonUrl;
+                    try {
+                        // retrieve results from bucket if already computed
+                        const results = await Promise.all([getDownloadURL(svgRef), getDownloadURL(jsonRef)]);
+                        svgUrl = results[0]
+                        jsonUrl = results[1];
+                    } catch (err) {
+                        const functions = getFunctions();
+                        const callableReturnMessage = httpsCallable(functions, 'make_pbn');
+                        // eslint-disable-next-line no-unused-vars
+                        const funcRes = await callableReturnMessage({"id": `${id}.jpg`});
+
+                        const results = await Promise.all([getDownloadURL(svgRef), getDownloadURL(jsonRef)]);
+                        svgUrl = results[0]
+                        jsonUrl = results[1];
+                    }
+                    // retrieve results from bucket
                     const [svgRes, jsonRes] = await Promise.all([axios.get(svgUrl), axios.get(jsonUrl)])
 
                     // update component data

@@ -1,5 +1,5 @@
 import { Canvas } from './components/Canvas'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import uuid from 'react-uuid';
 import storage from "../firebaseConfig"
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -8,12 +8,21 @@ import './App.css'
 
 const dir = "src/assets"
 let imageFiles = ["panda", "landscape", "flower", "portrait"];
-imageFiles = imageFiles.map(item => `${dir}/${item}.jpg`);
+const images = imageFiles.map(item => `${dir}/${item}.jpg`);
 
 function App() {
-  const [currImage, setCurrImage] = useState(imageFiles[0]);
-  const [images, setImages] = useState(imageFiles);
+  const [currImage, setCurrImage] = useState(images[0]);
+  const [userImages, setUserImages] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Retrieve array from local storage on component mount
+    let localImages = localStorage.getItem('userImages');
+    if (localImages) {
+      localImages = JSON.parse(localImages)
+      setUserImages(localImages);
+    }
+  }, []);
 
   function selectImage(image) {
     setCurrImage(image);
@@ -37,11 +46,9 @@ function App() {
       const res = await uploadBytes(imageRef, image);
       const url = await getDownloadURL(res.ref);
 
-      // const functions = getFunctions();
-      // const callableReturnMessage = httpsCallable(functions, 'generate_pbn');
-      // const funcRes = await callableReturnMessage({"id": fileName});
-
-      setImages([url, ...images]);
+      const updatedUserImages = [url, ...userImages]
+      setUserImages(updatedUserImages);
+      localStorage.setItem('userImages', JSON.stringify(updatedUserImages));
     } catch (err) {
       console.log(err)
     } finally{
@@ -53,7 +60,7 @@ function App() {
     <div className='app-container'>
       {loading && <LoadingOverlay></LoadingOverlay>}
       <p>
-        Try adding your own image! (this functionality is currently not implemented)
+        Try adding your own image!
       </p>
       <form>
         <input 
@@ -62,7 +69,7 @@ function App() {
         />
       </form>
       <div className='image-carousel'>
-          {images.map((item, index) => (
+          {[...userImages, ...images].map((item, index) => (
             <div key={index} className='carousel-item'>
               <img src={item} onClick={() => selectImage(item)} className={`carousel-img ${currImage === item ? 'selected' : ''}`}/>
             </div>
