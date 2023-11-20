@@ -14,6 +14,7 @@ export function Canvas({fName}) {
     const [svgString, setSvgString] = useState(null);
     const [idList, setIdList] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [errorMsg, setErrorMsg] = useState("");
 
     const handleItemClick = (id, color) => {
         const element = document.getElementById(id);
@@ -47,6 +48,7 @@ export function Canvas({fName}) {
     useEffect(() => {
         const importSvg = async () => {
             setLoading(true);
+            setErrorMsg("");
             try {
                 if (fName.includes("src/assets/")) {
                     const [baseFile] = fName.split(".");
@@ -93,7 +95,8 @@ export function Canvas({fName}) {
                     setSvgComponent(null)
                 }
             } catch (error) {
-              console.error('Error importing SVG/JSON:', error);
+                setErrorMsg("Error generating paint by number, try again later or try a smaller image size");
+                console.error('Error importing SVG/JSON:', error);
             } finally{
                 setLoading(false);
             }
@@ -148,11 +151,11 @@ export function Canvas({fName}) {
                     <img src="src/assets/escape.png" width={15}/>
                 </button>             
             </div>
-            {loading && <LoadingOverlay></LoadingOverlay>}
+            {loading && <LoadingOverlay loadingStr={"Generating Paint By Number..."}></LoadingOverlay>}
             {!loading && <div className='svg-container'>
                 <TransformComponent>
                     {svgString ? (<div dangerouslySetInnerHTML={{ __html: svgString }} className='svg-element'></div>) 
-                    : (SvgComponent && (<SvgComponent className='svg-element'></SvgComponent>))}
+                    : (SvgComponent ? (<SvgComponent className='svg-element'></SvgComponent>) : <div> {errorMsg} </div>)}
                 </TransformComponent>
             </div>}
         </div>

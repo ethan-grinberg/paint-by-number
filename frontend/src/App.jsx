@@ -14,6 +14,7 @@ function App() {
   const [currImage, setCurrImage] = useState(images[0]);
   const [userImages, setUserImages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState(null);
 
   useEffect(() => {
     // Retrieve array from local storage on component mount
@@ -29,15 +30,13 @@ function App() {
   }
 
   async function handleImageFile(e) {
-    const image = e.target.files[0];
-
-    if (!image.type.includes("image")) {
-      console.log("not an image");
-      return;
-    }
-
     setLoading(true);
+    setErrorMsg(null);
     try {
+      const image = e.target.files[0];
+      if (!image.type.includes("image")) {
+        throw new Error("not an image");
+      }
       // eslint-disable-next-line no-unused-vars
       const [_, extension] = image.name.split(".")
       const fileName = `${uuid()}.${extension}`;
@@ -50,6 +49,7 @@ function App() {
       setUserImages(updatedUserImages);
       localStorage.setItem('userImages', JSON.stringify(updatedUserImages));
     } catch (err) {
+      setErrorMsg("Error importing image, make sure it is in JPG format")
       console.log(err)
     } finally{
       setLoading(false)
@@ -58,10 +58,11 @@ function App() {
 
   return (
     <div className='app-container'>
-      {loading && <LoadingOverlay></LoadingOverlay>}
+      {loading && <LoadingOverlay loadingStr={"Uploading Image..."}></LoadingOverlay>}
       <p>
-        Try adding your own image!
+        Try adding your own images!
       </p>
+      {errorMsg && <p> {errorMsg} </p>}
       <form>
         <input 
           type="file"

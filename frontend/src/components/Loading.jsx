@@ -1,6 +1,6 @@
 import { Grid } from  'react-loader-spinner'
 
-export function LoadingOverlay() {
+export function LoadingOverlay({loadingStr}) {
     return (
       <div
         style={{
@@ -28,7 +28,7 @@ export function LoadingOverlay() {
             wrapperStyle={{margin: 20}}
         />
         <div>
-            Processing...
+            {loadingStr}
         </div>
       </div>
     );
