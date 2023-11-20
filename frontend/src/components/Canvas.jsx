@@ -62,7 +62,8 @@ export function Canvas({fName}) {
                     setSvgString(component.default)
                 } else {
                     // load from bucket
-                    const id = fName.substring(fName.indexOf("o/")+2, fName.lastIndexOf(".jpg"));
+                    const imageFile = fName.substring(fName.indexOf("o/")+2, fName.lastIndexOf("?"))
+                    const id = imageFile.split(".")[0]
                     const svgRef = ref(storage, `${id}.svg`);
                     const jsonRef = ref(storage, `${id}.json`);
                     
@@ -78,7 +79,7 @@ export function Canvas({fName}) {
                         const functions = getFunctions();
                         const callableReturnMessage = httpsCallable(functions, 'make_pbn');
                         // eslint-disable-next-line no-unused-vars
-                        const funcRes = await callableReturnMessage({"id": `${id}.jpg`});
+                        const funcRes = await callableReturnMessage({"id": imageFile});
 
                         const results = await Promise.all([getDownloadURL(svgRef), getDownloadURL(jsonRef)]);
                         svgUrl = results[0]
