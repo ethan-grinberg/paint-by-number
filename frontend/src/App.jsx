@@ -6,7 +6,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { LoadingOverlay } from './components/Loading';
 import './App.css'
 
-const dir = "src/assets"
+const dir = "."
 let imageFiles = ["panda", "landscape", "flower", "portrait"];
 const images = imageFiles.map(item => `${dir}/${item}.jpg`);
 

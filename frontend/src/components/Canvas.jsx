@@ -10,11 +10,10 @@ import axios from 'axios';
 const minLoadingTime = 800
 
 export function Canvas({fName}) {
-    const [SvgComponent, setSvgComponent] = useState(null);
     const [svgString, setSvgString] = useState(null);
     const [idList, setIdList] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [errorMsg, setErrorMsg] = useState("");
+    const [errorMsg, setErrorMsg] = useState(null);
 
     const handleItemClick = (id, color) => {
         const element = document.getElementById(id);
@@ -48,20 +47,19 @@ export function Canvas({fName}) {
     useEffect(() => {
         const importSvg = async () => {
             setLoading(true);
-            setErrorMsg("");
+            setErrorMsg(null);
             try {
-                if (fName.includes("src/assets/")) {
-                    const [baseFile] = fName.split(".");
+                if (!fName.includes("http")) {
+                    const baseFile = fName.split("./")[1].split(".jpg")[0]
                     // eslint-disable-next-line no-unused-vars
                     const [component, jsonFile, _] =  await Promise.all(
                         [
-                            import(`/${baseFile}.svg?react`), 
-                            import(`/${baseFile}.json`), 
+                            import(`../assets/${baseFile}.svg?raw`), 
+                            import(`../assets/${baseFile}.json`), 
                             new Promise((resolve) => setTimeout(resolve, minLoadingTime))
                         ])
                     setIdList(jsonFile.default);
-                    setSvgComponent(() => component.default);
-                    setSvgString(null)
+                    setSvgString(component.default)
                 } else {
                     // load from bucket
                     const id = fName.substring(fName.indexOf("o/")+2, fName.lastIndexOf(".jpg"));
@@ -92,7 +90,6 @@ export function Canvas({fName}) {
                     // update component data
                     setIdList(jsonRes.data);
                     setSvgString(svgRes.data);
-                    setSvgComponent(null)
                 }
             } catch (error) {
                 setErrorMsg("Error generating paint by number, try again later or try a smaller image size");
@@ -148,14 +145,14 @@ export function Canvas({fName}) {
                     Fill
                 </button>
                 <button onClick={() => resetTransform()}>
-                    <img src="src/assets/escape.png" width={15}/>
+                    <img src="./escape.png" width={15}/>
                 </button>             
             </div>
             {loading && <LoadingOverlay loadingStr={"Generating Paint By Number..."}></LoadingOverlay>}
             {!loading && <div className='svg-container'>
                 <TransformComponent>
-                    {svgString ? (<div dangerouslySetInnerHTML={{ __html: svgString }} className='svg-element'></div>) 
-                    : (SvgComponent ? (<SvgComponent className='svg-element'></SvgComponent>) : <div> {errorMsg} </div>)}
+                    {errorMsg ? (<div> {errorMsg} </div>) 
+                    : (<div dangerouslySetInnerHTML={{ __html: svgString }} className='svg-element'></div>)}
                 </TransformComponent>
             </div>}
         </div>
