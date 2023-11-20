@@ -5,11 +5,13 @@ import { getFunctions, httpsCallable } from "firebase/functions";
 import { ref, getDownloadURL } from "firebase/storage";
 import storage from '../../firebaseConfig';
 import { LoadingOverlay } from './Loading';
+import axios from 'axios';
 
 const minLoadingTime = 800
 
 export function Canvas({fName}) {
     const [SvgComponent, setSvgComponent] = useState(null);
+    const [svgString, setSvgString] = useState(null);
     const [idList, setIdList] = useState([]);
     const [loading, setLoading] = useState(false);
 
@@ -55,36 +57,33 @@ export function Canvas({fName}) {
                             import(`/${baseFile}.json`), 
                             new Promise((resolve) => setTimeout(resolve, minLoadingTime))
                         ])
-                    setLoading(false);
                     setIdList(jsonFile.default);
                     setSvgComponent(() => component.default);
+                    setSvgString(null)
                 } else {
                     // load from bucket
                     const id = fName.substring(fName.indexOf("o/")+2, fName.lastIndexOf(".jpg"));
-
+                    
+                    // call cloud function to convert image to pbn 
                     const functions = getFunctions();
-                    const callableReturnMessage = httpsCallable(functions, 'generate_pbn');
-                    const funcRes = await callableReturnMessage({"id": id});
+                    const callableReturnMessage = httpsCallable(functions, 'make_pbn');
+                    const funcRes = await callableReturnMessage({"id": `${id}.jpg`});
 
-                    // console.log(baseFile)
-                    // const svgRef = ref(storage, `${id}.svg`);
-                    // const jsonRef = ref(storage, `${id}.json`)
-                    // const svgUrl = await getDownloadURL(svgRef);
-                    // const jsonUrl = await getDownloadURL(jsonRef);
-                    // console.log(svgRef);
-                    // const [component, jsonFile, _] =  await Promise.all(
-                    //     [
-                    //         fetch(svgRef), 
-                    //         fetch(jsonRef)
-                    //     ])
-                    // console.log(component);
-                    // console.log(jsonFile)
-                    // setLoading(false);
-                    // setIdList(jsonFile.default);
-                    // setSvgComponent(() => component.default);
+                    // retrieve results from bucket
+                    const svgRef = ref(storage, `${id}.svg`);
+                    const jsonRef = ref(storage, `${id}.json`)
+                    const [svgUrl, jsonUrl] = await Promise.all([getDownloadURL(svgRef), getDownloadURL(jsonRef)])
+                    const [svgRes, jsonRes] = await Promise.all([axios.get(svgUrl), axios.get(jsonUrl)])
+
+                    // update component data
+                    setIdList(jsonRes.data);
+                    setSvgString(svgRes.data);
+                    setSvgComponent(null)
                 }
             } catch (error) {
               console.error('Error importing SVG/JSON:', error);
+            } finally{
+                setLoading(false);
             }
           };
         
@@ -140,7 +139,8 @@ export function Canvas({fName}) {
             {loading && <LoadingOverlay></LoadingOverlay>}
             {!loading && <div className='svg-container'>
                 <TransformComponent>
-                    {SvgComponent && (<SvgComponent className='svg-element'/>)}
+                    {svgString ? (<div dangerouslySetInnerHTML={{ __html: svgString }} className='svg-element'></div>) 
+                    : (SvgComponent && (<SvgComponent className='svg-element'></SvgComponent>))}
                 </TransformComponent>
             </div>}
         </div>
