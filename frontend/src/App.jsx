@@ -34,7 +34,7 @@ function App() {
     setErrorMsg(null);
     try {
       const image = e.target.files[0];
-      if (!image.type.includes("image")) {
+      if (!(image.type === "image/jpeg" || image.type === "image/png")) {
         throw new Error("not an image");
       }
       // eslint-disable-next-line no-unused-vars
@@ -60,7 +60,7 @@ function App() {
     <div className='app-container'>
       {loading && <LoadingOverlay loadingStr={"Uploading Image..."}></LoadingOverlay>}
       <p>
-        Try adding your own images!
+        Try adding your own images! (must be in jpg or png format)
       </p>
       {errorMsg && <p> {errorMsg} </p>}
       <form>
