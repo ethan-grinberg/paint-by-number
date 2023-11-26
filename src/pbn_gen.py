@@ -5,8 +5,10 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from kneed import KneeLocator
 from sklearn.utils import shuffle
+from shapely.geometry import Polygon, Point
 import svgwrite
 import json
+import random
 
 # Change me to an integer for consistent results between runs, or set to None to allow randomness in K-means
 random_state = None
@@ -14,7 +16,7 @@ random_state = None
 
 class PbnGen:
     def __init__(
-        self, f_name, num_colors=None, min_num_colors=10, pruningThreshold=6.25e-5
+        self, f_name, num_colors=10, min_num_colors=10, pruningThreshold=6.25e-5
     ):
         bgr_image = cv2.imread(f_name)
         # change to RGB
@@ -714,7 +716,8 @@ class PbnGen:
         i = 0
         palette = []
         color_masks = self.getUniqueColorsMasks()
-        for color, mask in color_masks.items():
+
+        for idx, (color, mask) in enumerate(color_masks.items()):
             mask[mask == False] = 0
             mask[mask == True] = 1
             boundary_img = self.getBoundaryImage(mask)
@@ -729,7 +732,8 @@ class PbnGen:
             )
 
             data = {}
-            data["color"] = str(color)
+            color_str = str(color)
+            data["color"] = color_str
             data["shapes"] = []
             for c in contours:
                 points = c.squeeze().tolist()
@@ -741,6 +745,9 @@ class PbnGen:
 
                 shape = dwg.polygon(points, fill=fill, stroke="black", id=str(i))
                 dwg.add(shape)
+                # add text label
+                self.add_text_label(dwg, c, str(idx))
+
                 data["shapes"].append(str(i))
                 i += 1
 
@@ -754,3 +761,46 @@ class PbnGen:
                 json.dump(palette, outfile)
 
         return palette
+    
+    def point_inside_contour(self, point, contour):
+        """Check if a point is inside a contour."""
+        return cv2.pointPolygonTest(contour, (point[0], point[1]), False) >= 0
+
+    def sample_text_position(self, contour, num_samples=150):
+
+        if len(contour) < 4:
+            # Not enough points to form a polygon return the centroid or the first point of the contour
+            moments = cv2.moments(contour)
+            if moments['m00'] != 0:
+                return (int(moments['m10'] / moments['m00']), int(moments['m01'] / moments['m00']))
+            else:
+                return (0, 0) 
+
+        # Convert contour to a shapely polygon for area computation
+        polygon = Polygon([pt[0] for pt in contour])
+        min_x, min_y, max_x, max_y = polygon.bounds
+        best_point = (0, 0)
+        max_distance = -1
+
+        for _ in range(num_samples):
+            x, y = random.uniform(min_x, max_x), random.uniform(min_y, max_y)
+            point = Point(x, y)
+
+            # Check if the sampled point is within the polygon and its distance to edges
+            if polygon.contains(point):
+                distance = polygon.exterior.distance(point)
+                if distance > max_distance:
+                    max_distance = distance
+                    best_point = (x, y)
+
+        return best_point
+
+    def add_text_label(self, dwg, contour, label):
+        best_point = self.sample_text_position(contour)
+
+        # Estimate a suitable text size
+        text_size = np.clip(np.sqrt(cv2.contourArea(contour)) / 8, 4, 12)
+
+        text = dwg.text(label, insert=best_point, fill='black', 
+                        font_size=str(text_size), text_anchor="middle")
+        dwg.add(text)
