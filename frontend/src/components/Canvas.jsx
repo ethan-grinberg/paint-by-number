@@ -1,39 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import "./Canvas.css";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
-import { Grid } from "react-loader-spinner";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { ref, getDownloadURL } from "firebase/storage";
+import storage from '../../firebaseConfig';
+import { LoadingOverlay } from './Loading';
+import axios from 'axios';
 
-const LoadingOverlay = () => {
-  return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        background: "rgba(0,0,0,0.5)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        flexDirection: "column",
-        zIndex: 9999,
-      }}
-    >
-      <Grid
-        height="100"
-        width="100"
-        color="#646cff"
-        ariaLabel="grid-loading"
-        radius="12.5"
-        wrapperClass=""
-        visible={true}
-        wrapperStyle={{ margin: 20 }}
-      />
-      <div>Processing...</div>
-    </div>
-  );
-};
+const minLoadingTime = 800
+
 
 export const Canvas = ({
   fName,
@@ -44,8 +19,9 @@ export const Canvas = ({
   loading,
   setLoading,
 }) => {
-  const [SvgComponent, setSvgComponent] = useState(null);
+  const [svgString, setSvgString] = useState(null);
   const currentColorRef = useRef(currentColor);
+  const [errorMsg, setErrorMsg] = useState(null);
 
   const handleItemClick = (id, color) => {
     const element = document.getElementById(id);
@@ -142,6 +118,65 @@ export const Canvas = ({
         }
       }
     }
+  }, [idList])
+    
+    useEffect(() => {
+        const importSvg = async () => {
+            setLoading(true);
+            setErrorMsg(null);
+            try {
+                if (!fName.includes("http")) {
+                    const baseFile = fName.split("./")[1].split(".jpg")[0]
+                    // eslint-disable-next-line no-unused-vars
+                    const [component, jsonFile, _] =  await Promise.all(
+                        [
+                            import(`../assets/${baseFile}.svg?raw`), 
+                            import(`../assets/${baseFile}.json`), 
+                            new Promise((resolve) => setTimeout(resolve, minLoadingTime))
+                        ])
+                    setIdList(jsonFile.default);
+                    setSvgString(component.default)
+                } else {
+                    // load from bucket
+                    const imageFile = fName.substring(fName.indexOf("o/")+2, fName.lastIndexOf("?"))
+                    const id = imageFile.split(".")[0]
+                    const svgRef = ref(storage, `${id}.svg`);
+                    const jsonRef = ref(storage, `${id}.json`);
+                    
+                    // call cloud function to convert image to pbn if not already computed
+                    let svgUrl;
+                    let jsonUrl;
+                    try {
+                        // retrieve results from bucket if already computed
+                        const results = await Promise.all([getDownloadURL(svgRef), getDownloadURL(jsonRef)]);
+                        svgUrl = results[0]
+                        jsonUrl = results[1];
+                    } catch (err) {
+                        const functions = getFunctions();
+                        const callableReturnMessage = httpsCallable(functions, 'make_pbn');
+                        // eslint-disable-next-line no-unused-vars
+                        const funcRes = await callableReturnMessage({"id": imageFile});
+
+                        const results = await Promise.all([getDownloadURL(svgRef), getDownloadURL(jsonRef)]);
+                        svgUrl = results[0]
+                        jsonUrl = results[1];
+                    }
+                    // retrieve results from bucket
+                    const [svgRes, jsonRes] = await Promise.all([axios.get(svgUrl), axios.get(jsonUrl)])
+
+                    // update component data
+                    setIdList(jsonRes.data);
+                    setSvgString(svgRes.data);
+                }
+            } catch (error) {
+                setErrorMsg("Error generating paint by number, try again later or try a smaller image size");
+                console.error('Error importing SVG/JSON:', error);
+            } finally{
+                setLoading(false);
+            }
+          };
+        
+        importSvg();
 
     // Cleanup: Remove event listeners when the component unmounts
     return () => {
@@ -167,22 +202,26 @@ export const Canvas = ({
       {
         // eslint-disable-next-line no-unused-vars
         ({ zoomIn, zoomOut, resetTransform, ...rest }) => (
-          <div className="canvas-container">
-            <div className="controls">
-              <button onClick={() => clearColors()}>Clear</button>
-              <button onClick={() => fillColors()}>Fill</button>
-              <button onClick={() => resetTransform()}>
-                <img src="src/assets/escape.png" width={15} />
-              </button>
+        <div className='canvas-container'>
+            <div className='controls'>
+                <button onClick={() => clearColors()}> 
+                    Clear
+                </button>  
+                <button onClick={() => fillColors()}>
+                    Fill
+                </button>
+                <button onClick={() => resetTransform()}>
+                    <img src="./escape.png" width={15}/>
+                </button>             
             </div>
-            {loading && <LoadingOverlay></LoadingOverlay>}
-            {!loading && (
-              <div className="svg-container">
+            {loading && <LoadingOverlay loadingStr={"Generating Paint By Number..."}></LoadingOverlay>}
+            {!loading && <div className='svg-container'>
                 <TransformComponent>
-                  {SvgComponent && <SvgComponent className="svg-element" />}
+                    {errorMsg ? (<div> {errorMsg} </div>) 
+                    : (<div dangerouslySetInnerHTML={{ __html: svgString }} className='svg-element'></div>)}
                 </TransformComponent>
               </div>
-            )}
+            }
           </div>
         )
       }
