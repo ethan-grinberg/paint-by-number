@@ -85,26 +85,6 @@ export const Canvas = ({
     updatePathStrokes(currentColor)
   }, [currentColor]);
 
-  useEffect(() => {
-    const importSvg = async () => {
-      setLoading(true);
-      try {
-        // eslint-disable-next-line no-unused-vars
-        const [component, jsonFile, _] = await Promise.all([
-          import(`/src/assets/${fName}.svg?react`),
-          import(`/src/assets/${fName}.json`),
-          new Promise((resolve) => setTimeout(resolve, 800)),
-        ]);
-        setLoading(false);
-        setIdList(jsonFile.default);
-        setSvgComponent(() => component.default);
-      } catch (error) {
-        console.error("Error importing SVG/JSON:", error);
-      }
-    };
-
-    importSvg();
-  }, [fName]);
 
   useEffect(() => {
     // Loop through the list of IDs and add event listeners
@@ -118,6 +98,20 @@ export const Canvas = ({
         }
       }
     }
+
+     // Cleanup: Remove event listeners when the component unmounts
+     return () => {
+      for (const { color, shapes } of idList) {
+        for (const id of shapes) {
+          const element = document.getElementById(id);
+          if (element) {
+            element.removeEventListener("click", () =>
+              handleItemClick(id, `rgb${color}`)
+            );
+          }
+        }
+      }
+    };
   }, [idList])
     
     useEffect(() => {
@@ -177,21 +171,7 @@ export const Canvas = ({
           };
         
         importSvg();
-
-    // Cleanup: Remove event listeners when the component unmounts
-    return () => {
-      for (const { color, shapes } of idList) {
-        for (const id of shapes) {
-          const element = document.getElementById(id);
-          if (element) {
-            element.removeEventListener("click", () =>
-              handleItemClick(id, `rgb${color}`)
-            );
-          }
-        }
-      }
-    };
-  }, [idList]);
+  }, [fName]);
 
   return (
     <TransformWrapper
