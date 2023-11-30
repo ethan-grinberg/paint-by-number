@@ -16,7 +16,7 @@ random_state = None
 
 class PbnGen:
     def __init__(
-        self, f_name, num_colors=10, min_num_colors=10, pruningThreshold=6.25e-5
+        self, f_name, num_colors=None, min_num_colors=10, pruningThreshold=6.25e-5
     ):
         bgr_image = cv2.imread(f_name)
         # change to RGB
