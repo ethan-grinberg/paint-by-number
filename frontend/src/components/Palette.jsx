@@ -28,7 +28,7 @@ const Palette = ({ idList, currentColor, setCurrentColor, colorCount }) => {
         if (idx === 0) return null;
           {
             return (colorCount[value.color] / value.shapes.length === 0) ? 
-            <img src="src/assets/check.png" className="completed-item"/>
+            <img src="/check.png" className="completed-item"/>
             :
             <div
               key={idx}
