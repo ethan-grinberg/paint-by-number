@@ -72,10 +72,29 @@ function App() {
 
   return (
     <div className='app-container'>
+      <div className="title-container">
+        <h1>
+          PBNgen
+        </h1>
+        <a href="https://github.com/ethan-grinberg/paint-by-number" style={{marginLeft: 10}}>
+          <img src={"/github-logo.png"} width={50}/>
+        </a>
+      </div>
+      <h2 style={{fontWeight:250}}>
+        Automatically generate paint by numbers from your images and color them in
+      </h2>
+      <ul className="instructions-container">
+        <li className="instructions-item">
+          Upload your image in jpg or png format
+        </li>
+        <li className="instructions-item">
+          In this version high resolution images might time out or take a while
+        </li>
+      </ul>
       {loading && <LoadingOverlay loadingStr={"Uploading Image..."}></LoadingOverlay>}
-      <p>
-        Try adding your own images! (must be in jpg or png format)
-      </p>
+      {/* <h3>
+        Try adding your own images
+      </h3> */}
       {errorMsg && <p> {errorMsg} </p>}
       <form>
         <input 
@@ -83,6 +102,11 @@ function App() {
           onChange={handleImageFile}
         />
       </form>
+      {/* <p>
+        Note: Your images must be in jpg or png format 
+        <br></br>
+        and very high resolution images might take a while or time out
+      </p> */}
       <div className='image-carousel'>
           {[...userImages, ...images].map((item, index) => (
             <div key={index} className='carousel-item'>

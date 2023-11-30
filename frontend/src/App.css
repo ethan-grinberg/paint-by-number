@@ -8,6 +8,21 @@
   margin: 0px auto;
 }
 
+.title-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.instructions-container {
+  display: inline-block;
+  text-align: left;
+}
+
+.instructions-item {
+  margin-top: 5px;
+}
+
 .image-carousel {
   margin-top: 20px;
   width: 100%;
@@ -55,6 +70,7 @@ input:focus-visible {
 
 .palette-container {
   margin-top: 10px;
+
   width: 100%;
   overflow-x: auto;
   white-space: nowrap;
