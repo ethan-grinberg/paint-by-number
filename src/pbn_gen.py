@@ -408,6 +408,85 @@ class PbnGen:
 
         self.prunableClusters = prunableClusters
 
+    def getClusteringEffectiveness(self) -> tuple[dict, dict, dict, dict, int, int, float]:
+        
+        """
+        Returns stats about the effectiveness of cluster pruning by comparing raw cluster counts to theoretical pruned ones
+
+        Returns:
+            (rawStats, prunedStats, remainingStats, reductionFactors)
+            rawStats: The number of clusters per color of the current image
+            prunedStats: The number of clusters per color that pruning will remove
+            remainingStats: How many clusters remain per color
+            reductionFactory: By what percentage did pruning reduce cluster counts
+            totalRawClusters: How many raw clusters there were
+            totalPrunedClusters: How many clusters were pruned
+            totalReduction: The percentage of total clusters pruned
+        """
+        
+        rawStats, prunedStats = self._getClusterStats()
+        
+        totalRawClusters = 0
+        totalPrunedClusters = 0
+        remainingStats = {}
+        reductionFactors = {}
+        
+        for color in rawStats.keys():
+            rawCount = rawStats[color]
+            prunedCount = prunedStats[color]
+            totalRawClusters += rawCount
+            totalPrunedClusters += prunedCount
+            
+            
+            remainingStats[color] = rawCount - prunedCount
+            reductionFactors[color] = round((1-(rawCount-prunedCount)/rawCount)*100, 2)
+            
+        totalReduction = round((1-(totalRawClusters-totalPrunedClusters)/totalRawClusters)*100, 2)
+        
+        return rawStats, prunedStats, remainingStats, reductionFactors, totalRawClusters, totalPrunedClusters, totalReduction
+
+    def _getClusterStats(self) -> tuple[dict, dict]:
+        """
+        Gets a dictionary in the format {(R, G, B): clusterCount} where clusterCount is the number of clusters of that color.
+        Also returns the number of clusters that would be pruned
+
+
+        Returns:
+            (rawStats, prunedStats)
+            Dictionaries with the number of clusters per color in the current image, and how many will be pruned
+        """
+
+        colorsDict = self.getUniqueColorsMasks()
+
+        rawCounts = {}
+        prunedCounts = {}
+
+        for color in colorsDict.keys():
+            mask = colorsDict[color]
+
+            # The mask seems to need to be a "binary" image but the binary values are 0 and 255 instead of 0 and 1
+            (
+                numLabels,
+                labels,
+                stats,
+                centroids,
+            ) = cv2.connectedComponentsWithStatsWithAlgorithm(
+                (mask[..., 0] * 255).astype(np.uint8), 8, cv2.CV_32S, cv2.CCL_WU
+            )
+
+            rawCounts[color] = numLabels
+
+            labelIndices = np.arange(1, numLabels)
+            areas = stats[labelIndices, -1]
+
+            imageArea = self.getImageArea()
+            # Get an array representing the clusters that are too small and should be pruned
+            tooSmall = imageArea * self.pruningThreshold > areas
+            tooSmallCount = np.sum(tooSmall.astype(np.uint8))
+            prunedCounts[color] = tooSmallCount
+
+        return rawCounts, prunedCounts
+
     def getMainSurroundingColor(self, image, mask) -> np.ndarray:
         """
         Returns the main surrounding color given a binary mask and image. The function will check the edges of the mask to determine the present colors
@@ -574,7 +653,7 @@ class PbnGen:
 
             self.setImage(image.copy())
 
-    def pruneClustersSimple(self, iterations: int = 3, showPlots=False):
+    def pruneClustersSimple(self, iterations: int = 3, showPlots=False, trySlow=False):
         """
         A simple cluster pruning method which iteratively prunes the smallest clusters below the self.pruningThreshold class variable.
         In most cases, this simple method produces similar results to pruneClustersSmart(), but is faster.
@@ -585,6 +664,10 @@ class PbnGen:
         """
 
         print(f"Starting pruning... \nIteration (of {iterations}): ", end="")
+
+        if trySlow:
+            print('WARNING: USING ITERATIVE self.getMainSurroundingColor()! EXPECT POOR PERFORMANCE')
+
 
         for i in range(iterations):
             print(f"{i+1} ", end="")
@@ -613,26 +696,45 @@ class PbnGen:
                 if uniqueLabels.shape[0] == 0:
                     continue
 
-                surroundingColors = self.getMainSurroundingColorVectorized(
-                    image, labelMask, uniqueLabels
-                )
+                if trySlow:
+                    # A much slower iterative version of cluster pruning
+                    surroundingColorsList = []
+                    for label in uniqueLabels:
+                        clusterMask = (labelMask != label).astype(np.uint8)
+                        surroundingColor = self.getMainSurroundingColor(
+                            image, clusterMask
+                        )
+                        surroundingColorsList.append(surroundingColor)
+                    
+                    surroundingColors = np.array(surroundingColorsList, dtype=np.uint8)
+                    
+                    for idx in range(uniqueLabels.shape[0]):
+                        currentLabel = uniqueLabels[idx]
+                        currentColor = surroundingColors[idx, :]
+                        image[labelMask == currentLabel] = currentColor
+                    
+                else:
+                    # The fast vectorized version
+                    surroundingColors = self.getMainSurroundingColorVectorized(
+                        image, labelMask, uniqueLabels
+                    )
 
-                # Create an index mapping for each unique label
-                consistentIndexingMap = {
-                    label: index for index, label in enumerate(uniqueLabels)
-                }
+                    # Create an index mapping for each unique label
+                    consistentIndexingMap = {
+                        label: index for index, label in enumerate(uniqueLabels)
+                    }
 
-                # Create an indexed version of labelMask for non-zero labels
-                consistentLabelMask = np.zeros_like(labelMask)
+                    # Create an indexed version of labelMask for non-zero labels
+                    consistentLabelMask = np.zeros_like(labelMask)
 
-                # Edit the current label mask so it has consistent integer values to quickly map them to colors
-                for label, index in consistentIndexingMap.items():
-                    consistentLabelMask[labelMask == label] = index
+                    # Edit the current label mask so it has consistent integer values to quickly map them to colors
+                    for label, index in consistentIndexingMap.items():
+                        consistentLabelMask[labelMask == label] = index
 
-                # Apply the mapping only to non-zero labels
-                image[labelMask != 0] = surroundingColors[
-                    consistentLabelMask[labelMask != 0]
-                ]
+                    # Apply the mapping only to non-zero labels
+                    image[labelMask != 0] = surroundingColors[
+                        consistentLabelMask[labelMask != 0]
+                    ]
 
             if showPlots:
                 plt.figure(figsize=(20, 20)), plt.imshow(self.image), plt.title(
