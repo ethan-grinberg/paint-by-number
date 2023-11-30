@@ -52,3 +52,10 @@ input:focus,
 input:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
+
+.palette-container {
+  margin-top: 10px;
+  width: 100%;
+  overflow-x: auto;
+  white-space: nowrap;
+}

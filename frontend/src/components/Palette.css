@@ -1,23 +1,18 @@
-.palette-container {
-  width: 100%;
-  margin-top: 25px;
-  display: flex;
-  justify-content: space-evenly;
-  margin-bottom: 5px;
-}
-
 .palette-item {
   position: relative;
   height: 40px;
   width: 40px;
   border-radius: 50%;
-  display: flex;
+  margin: 5px;
+  cursor: pointer;
+
+  display: inline-flex;
   justify-content: center;
   align-items: center;
-  cursor: pointer;
 }
 
 .completed-item {
   height: 40px;
   width: 40px;
+  margin: 5px;
 }

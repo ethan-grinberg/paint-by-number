@@ -90,7 +90,7 @@ function App() {
             </div>
           ))}
       </div>
-      <div className="canvas">
+      <div className="palette-container">
       {
         !loading && 
           <Palette
@@ -100,6 +100,8 @@ function App() {
             colorCount={colorCount}
           />
       }
+      </div>
+      <div className="canvas">
         <Canvas
           fName={currImage}
           currentColor={currentColor}
