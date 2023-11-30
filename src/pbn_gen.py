@@ -408,8 +408,9 @@ class PbnGen:
 
         self.prunableClusters = prunableClusters
 
-    def getClusteringEffectiveness(self) -> tuple[dict, dict, dict, dict, int, int, float]:
-        
+    def getClusteringEffectiveness(
+        self,
+    ) -> "tuple[dict, dict, dict, dict, int, int, float]":
         """
         Returns stats about the effectiveness of cluster pruning by comparing raw cluster counts to theoretical pruned ones
 
@@ -423,29 +424,40 @@ class PbnGen:
             totalPrunedClusters: How many clusters were pruned
             totalReduction: The percentage of total clusters pruned
         """
-        
+
         rawStats, prunedStats = self._getClusterStats()
-        
+
         totalRawClusters = 0
         totalPrunedClusters = 0
         remainingStats = {}
         reductionFactors = {}
-        
+
         for color in rawStats.keys():
             rawCount = rawStats[color]
             prunedCount = prunedStats[color]
             totalRawClusters += rawCount
             totalPrunedClusters += prunedCount
-            
-            
-            remainingStats[color] = rawCount - prunedCount
-            reductionFactors[color] = round((1-(rawCount-prunedCount)/rawCount)*100, 2)
-            
-        totalReduction = round((1-(totalRawClusters-totalPrunedClusters)/totalRawClusters)*100, 2)
-        
-        return rawStats, prunedStats, remainingStats, reductionFactors, totalRawClusters, totalPrunedClusters, totalReduction
 
-    def _getClusterStats(self) -> tuple[dict, dict]:
+            remainingStats[color] = rawCount - prunedCount
+            reductionFactors[color] = round(
+                (1 - (rawCount - prunedCount) / rawCount) * 100, 2
+            )
+
+        totalReduction = round(
+            (1 - (totalRawClusters - totalPrunedClusters) / totalRawClusters) * 100, 2
+        )
+
+        return (
+            rawStats,
+            prunedStats,
+            remainingStats,
+            reductionFactors,
+            totalRawClusters,
+            totalPrunedClusters,
+            totalReduction,
+        )
+
+    def _getClusterStats(self) -> "tuple[dict, dict]":
         """
         Gets a dictionary in the format {(R, G, B): clusterCount} where clusterCount is the number of clusters of that color.
         Also returns the number of clusters that would be pruned
@@ -666,8 +678,9 @@ class PbnGen:
         print(f"Starting pruning... \nIteration (of {iterations}): ", end="")
 
         if trySlow:
-            print('WARNING: USING ITERATIVE self.getMainSurroundingColor()! EXPECT POOR PERFORMANCE')
-
+            print(
+                "WARNING: USING ITERATIVE self.getMainSurroundingColor()! EXPECT POOR PERFORMANCE"
+            )
 
         for i in range(iterations):
             print(f"{i+1} ", end="")
@@ -705,14 +718,14 @@ class PbnGen:
                             image, clusterMask
                         )
                         surroundingColorsList.append(surroundingColor)
-                    
+
                     surroundingColors = np.array(surroundingColorsList, dtype=np.uint8)
-                    
+
                     for idx in range(uniqueLabels.shape[0]):
                         currentLabel = uniqueLabels[idx]
                         currentColor = surroundingColors[idx, :]
                         image[labelMask == currentLabel] = currentColor
-                    
+
                 else:
                     # The fast vectorized version
                     surroundingColors = self.getMainSurroundingColorVectorized(
@@ -844,11 +857,15 @@ class PbnGen:
 
                 fill = "white"
                 # fill = "rgb" + str(color)
+                group = dwg.g(fill=fill, stroke="black", id=str(i))
+                shape = dwg.polygon(points)
 
-                shape = dwg.polygon(points, fill=fill, stroke="black", id=str(i))
-                dwg.add(shape)
                 # add text label
-                self.add_text_label(dwg, c, str(idx))
+                text = self.add_text_label(dwg, c, str(idx))
+
+                group.add(shape)
+                group.add(text)
+                dwg.add(group)
 
                 data["shapes"].append(str(i))
                 i += 1
@@ -863,20 +880,22 @@ class PbnGen:
                 json.dump(palette, outfile)
 
         return palette
-    
+
     def point_inside_contour(self, point, contour):
         """Check if a point is inside a contour."""
         return cv2.pointPolygonTest(contour, (point[0], point[1]), False) >= 0
 
     def sample_text_position(self, contour, num_samples=150):
-
         if len(contour) < 4:
             # Not enough points to form a polygon return the centroid or the first point of the contour
             moments = cv2.moments(contour)
-            if moments['m00'] != 0:
-                return (int(moments['m10'] / moments['m00']), int(moments['m01'] / moments['m00']))
+            if moments["m00"] != 0:
+                return (
+                    int(moments["m10"] / moments["m00"]),
+                    int(moments["m01"] / moments["m00"]),
+                )
             else:
-                return (0, 0) 
+                return (0, 0)
 
         # Convert contour to a shapely polygon for area computation
         polygon = Polygon([pt[0] for pt in contour])
@@ -903,6 +922,11 @@ class PbnGen:
         # Estimate a suitable text size
         text_size = np.clip(np.sqrt(cv2.contourArea(contour)) / 8, 4, 12)
 
-        text = dwg.text(label, insert=best_point, fill='black', 
-                        font_size=str(text_size), text_anchor="middle")
-        dwg.add(text)
+        text = dwg.text(
+            label,
+            insert=best_point,
+            font_size=str(text_size),
+            text_anchor="middle",
+        )
+        return text
+        # dwg.add(text)

@@ -4,7 +4,7 @@ import "./Palette.css";
 const paletteItemStyles = (currentColor, color) => {
   return {
     backgroundColor: `rgb${color}`,
-    border: `${currentColor === color ? "2px" : "0"} solid red`,
+    border: `${currentColor === color ? "2px" : "0"} solid #646cff`,
   };
 };
 

@@ -3,6 +3,7 @@
   margin-top: 25px;
   display: flex;
   justify-content: space-evenly;
+  margin-bottom: 5px;
 }
 
 .palette-item {

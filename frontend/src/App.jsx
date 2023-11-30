@@ -91,6 +91,15 @@ function App() {
           ))}
       </div>
       <div className="canvas">
+      {
+        !loading && 
+          <Palette
+            idList={idList}
+            currentColor={currentColor}
+            setCurrentColor={setCurrentColor}
+            colorCount={colorCount}
+          />
+      }
         <Canvas
           fName={currImage}
           currentColor={currentColor}
@@ -101,15 +110,6 @@ function App() {
           setLoading={setLoading}
         />
       </div>
-      {
-        !loading && 
-          <Palette
-            idList={idList}
-            currentColor={currentColor}
-            setCurrentColor={setCurrentColor}
-            colorCount={colorCount}
-          />
-      }
     </div>
   );
 }
