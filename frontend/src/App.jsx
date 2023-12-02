@@ -90,6 +90,11 @@ function App() {
         <li className="instructions-item">
           In this version high resolution images might time out or take a while
         </li>
+        <li className="instructions-item">
+          The application might say you are not finished with a certain color even when you cannot see anymore shapes to fill in.
+          <br/>
+          This is because automatically generating paint by numbers can create very small shapes.
+        </li>
       </ul>
       {loading && <LoadingOverlay loadingStr={"Uploading Image..."}></LoadingOverlay>}
       {/* <h3>
