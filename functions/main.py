@@ -39,7 +39,7 @@ def make_pbn(req: https_fn.CallableRequest):
         nparr = np.frombuffer(contents, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-        pbn = PbnGen(img)
+        pbn = PbnGen(img, num_colors=15)
         pbn.set_final_pbn()
         svg_output, palette = pbn.output_to_svg()
         palette_str = json.dumps(palette)

@@ -691,7 +691,7 @@ class PbnGen:
         self.blurImage_(blurType="bilateral", ksize=21, sigmaColor=21, sigmaSpace=14)
         self.resizeImage_(0.5)
         self.cluster_colors_()
-        self.pruneClustersSimple(iterations=6)
+        self.pruneClustersSimple()
         self.resizeImage_(dimension=originalDims)
         # draw rectangle around image so border is recognized
         img = self.getImage()
