@@ -15,7 +15,13 @@ random_state = None
 
 class PbnGen:
     def __init__(
-        self, bgr_image, num_colors=None, min_num_colors=10, pruningThreshold=6.25e-5
+        self,
+        bgr_image,
+        num_colors=None,
+        min_num_colors=10,
+        pruningThreshold=6.25e-5,
+        max_resolution=200000,
+        min_percent_area=0.001,
     ):
         # bgr_image = cv2.imread(f_name)
         # change to RGB
@@ -30,6 +36,10 @@ class PbnGen:
 
         # The minimum percentage of the image's area a color cluster can be before getting absorbed by surrounding colors
         self.pruningThreshold = pruningThreshold
+
+        self.max_resolution = max_resolution
+
+        self.min_percent_area = min_percent_area
 
         # This will contain a dict of colors and binary masks of the pruned clusters
         self.prunableClusters = None
@@ -258,6 +268,22 @@ class PbnGen:
         resized = self.resizeImage(scale=scale, dimension=dimension)
 
         self.setImage(resized)
+
+    def lower_resolution(self, max_pixels):
+        img = self.getImage()
+        h, w = img.shape[:2]
+
+        if h * w <= max_pixels:
+            return
+
+        aspect_ratio = w / h
+
+        downsampled_w = int((max_pixels * aspect_ratio) ** 0.5)
+        downsampled_h = int(downsampled_w / aspect_ratio)
+        downsized_image = cv2.resize(
+            img, (downsampled_w, downsampled_h), interpolation=cv2.INTER_AREA
+        )
+        self.setImage(downsized_image)
 
     def blurImage_(
         self,
@@ -682,21 +708,22 @@ class PbnGen:
 
         return boundaryImage
 
-    def set_final_pbn(self):
+    def set_final_pbn(self, border_size=5):
         """
         Runs all necessary functions to get the final paint by number image
         and set the internal image representation to it.
         """
-        originalDims = self.getImage().shape[:-1]
-        self.blurImage_(blurType="bilateral", ksize=21, sigmaColor=21, sigmaSpace=14)
-        self.resizeImage_(0.5)
+        # print("lowering resolution")
+        # self.lower_resolution(self.max_resolution)
+
+        print("clustering colors")
         self.cluster_colors_()
-        self.pruneClustersSimple()
-        self.resizeImage_(dimension=originalDims)
-        # draw rectangle around image so border is recognized
+
         img = self.getImage()
-        img = cv2.rectangle(img, (0, 0), (img.shape[1], img.shape[0]), (0, 0, 0), 10)
-        self.setImage(img)
+        h, w, c = img.shape
+        canvas = np.zeros((h + 2 * border_size, w + 2 * border_size, c), dtype=np.uint8)
+        canvas[border_size : border_size + h, border_size : border_size + w] = img
+        self.setImage(canvas)
 
     def output_to_svg(self, output_palette_path: str = None):
         """
@@ -710,7 +737,11 @@ class PbnGen:
             of unique html ids representing each shape. This will allow for javascript
             manipulation of the color of each shape.
         """
-        h, w = self.getImage().shape[:2]
+        print("writing contours to svg")
+        img = self.getImage()
+        h, w, c = img.shape
+        min_area = h * w * self.min_percent_area
+
         dwg = svgwrite.Drawing(profile="tiny", viewBox=(f"0 0 {w} {h}"))
         i = 0
         palette = []
@@ -719,9 +750,6 @@ class PbnGen:
             mask[mask == False] = 0
             mask[mask == True] = 1
             boundary_img = self.getBoundaryImage(mask)
-
-            # plt.imshow(boundary_img, cmap="gray")
-            # plt.show()
 
             contours, hierarchy = cv2.findContours(
                 boundary_img.astype(np.uint8),
@@ -734,12 +762,14 @@ class PbnGen:
             data["shapes"] = []
             for c in contours:
                 points = c.squeeze().tolist()
-                if len(c.squeeze().shape) == 1:
-                    points = [points]
+                if len(points) < 4:
+                    continue
+
+                polygon = Polygon([pt[0] for pt in c])
+                if polygon.area < min_area:
+                    continue
 
                 fill = "white"
-                # fill = "rgb" + str(color)
-
                 group = dwg.g(fill=fill, stroke="black", id=str(i))
                 shape = dwg.polygon(points)
 
@@ -761,17 +791,6 @@ class PbnGen:
         return cv2.pointPolygonTest(contour, (point[0], point[1]), False) >= 0
 
     def sample_text_position(self, contour, num_samples=150):
-        if len(contour) < 4:
-            # Not enough points to form a polygon return the centroid or the first point of the contour
-            moments = cv2.moments(contour)
-            if moments["m00"] != 0:
-                return (
-                    int(moments["m10"] / moments["m00"]),
-                    int(moments["m01"] / moments["m00"]),
-                )
-            else:
-                return (0, 0)
-
         # Convert contour to a shapely polygon for area computation
         polygon = Polygon([pt[0] for pt in contour])
         min_x, min_y, max_x, max_y = polygon.bounds
@@ -804,4 +823,3 @@ class PbnGen:
             text_anchor="middle",
         )
         return text
-        # dwg.add(text)

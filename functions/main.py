@@ -25,6 +25,7 @@ def make_pbn(req: https_fn.CallableRequest):
         )
 
     try:
+        print("retrieving original image")
         blob = bucket.blob(object_id)
         contents = blob.download_as_string()
     except Exception as e:
@@ -46,12 +47,14 @@ def make_pbn(req: https_fn.CallableRequest):
 
         svg_blob = bucket.blob(f"{base_id}.svg")
 
+        print("uploading svg")
         svg_blob.upload_from_string(
             str.encode(svg_output), content_type="image/svg+xml"
         )
 
         json_blob = bucket.blob(f"{base_id}.json")
 
+        print("uploading json")
         json_blob.upload_from_string(
             str.encode(palette_str), content_type="application/json"
         )
